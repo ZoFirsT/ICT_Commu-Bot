@@ -11,7 +11,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.once(Events.ClientReady, async () => {
     const logChannelId = process.env.LOG_CHBOTS;
 
-    let totalUsers = 0; // Initialize totalUsers
+    let totalUsers = 0;
     for (const guild of client.guilds.cache.values()) {
         totalUsers += guild.memberCount;
     }
@@ -55,13 +55,10 @@ client.once(Events.ClientReady, async () => {
         }
     }
 
-    // Initial embed and activity setup
     await updateAndSendEmbed();
 
-    // Update embed every 5 seconds
     setInterval(updateAndSendEmbed, 5000); 
 
-    // Activity Cycling
     const activities = [
         { name: `กับผู้ใช้ ${totalUsers} คน`, type: ActivityType.Playing },
         { name: `ในเซิร์ฟเวอร์ ${client.guilds.cache.size} แห่ง`, type: ActivityType.Watching },
@@ -72,12 +69,11 @@ client.once(Events.ClientReady, async () => {
     let currentActivityIndex = 0;
     async function updateActivity() {
         try {
-            // Fetch updated user count before setting activity
             totalUsers = 0;
             for (const guild of client.guilds.cache.values()) {
                 totalUsers += guild.memberCount;
             }
-            activities[0].name = `กับผู้ใช้ ${totalUsers} คน`; // Update activity with new count
+            activities[0].name = `กับผู้ใช้ ${totalUsers} คน`;
 
             client.user.setActivity(activities[currentActivityIndex]);
             currentActivityIndex = (currentActivityIndex + 1) % activities.length;
@@ -86,7 +82,6 @@ client.once(Events.ClientReady, async () => {
         }
     }
     
-    // Call initially and then every 5 seconds (to avoid rate limits)
     updateActivity(); 
     setInterval(updateActivity, 5000); 
 

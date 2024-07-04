@@ -26,7 +26,7 @@ const verifyInputModal = async (interaction) => {
     const role = interaction.guild.roles.cache.find(
       (r) => r.id === VERIFY_ROLE_ID
     );
-    await interactionUser.roles.add(role); // Use interactionUser to add the role
+    await interactionUser.roles.add(role);
 
     const [fullName, nickName, major, studentId, year] =
       interaction.fields.fields.map((field) => field.value);
@@ -87,15 +87,14 @@ const verifyInputModal = async (interaction) => {
 
     if (error.code === 10062) {
       errorMessage = "คำขอนี้ถูกประมวลผลไปแล้ว";
-    } else if (error.code === 50001) { // Missing Access error
+    } else if (error.code === 50001) {
       errorMessage = "บอทไม่มีสิทธิ์ในการเข้าถึงช่องนี้ กรุณาตรวจสอบสิทธิ์ของบอท";
-      ephemeral = false; // แสดงข้อความนี้ให้ทุกคนเห็น เพื่อให้ผู้ดูแลระบบทราบ
-    } else if (error.code === 50013) { // Missing Permissions error
+      ephemeral = false;
+    } else if (error.code === 50013) {
       errorMessage = "บอทไม่มีสิทธิ์ในการดำเนินการนี้ กรุณาตรวจสอบสิทธิ์ของบอท";
-      ephemeral = false; // แสดงข้อความนี้ให้ทุกคนเห็น เพื่อให้ผู้ดูแลระบบทราบ
+      ephemeral = false;
     }
 
-    // ตอบกลับ/แก้ไขข้อความเดิมถ้าเป็นไปได้
     if (interaction.replied || interaction.deferred) {
       try {
         await interaction.followUp({ content: errorMessage, ephemeral });
@@ -139,11 +138,10 @@ module.exports = {
       console.error("Error handling interaction:", error);
 
       let errorMessage = "เกิดข้อผิดพลาดในการประมวลผลคำขอของคุณ";
-      if (error.code === 10062) { // Interaction has already been acknowledged.
+      if (error.code === 10062) {
         errorMessage = "คำขอนี้ถูกประมวลผลไปแล้ว";
       }
 
-      // ตอบกลับข้อความเดิมถ้าเป็นไปได้
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({
           content: errorMessage,
