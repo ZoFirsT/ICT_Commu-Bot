@@ -1,0 +1,11 @@
+version: '3.8'  # Specify the Docker Compose version
+
+services:
+  verifybot:
+    build: .  # Build the image from the current directory
+    volumes:
+      - ./:/app  # Mount the current directory as /app in the container
+    ports:
+      - "3000:3000"  # Expose port 3000 of the container to port 3000 of the host
+    environment:
+      - NODE_ENV=production  # Set environment variable for production mode (optional)
