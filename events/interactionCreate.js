@@ -28,48 +28,60 @@ const verifyInputModal = async (interaction) => {
     );
     await interactionUser.roles.add(role);
 
-    const [fullName, nickName, major, studentId, year] =
-      interaction.fields.fields.map((field) => field.value);
+    const fields = interaction.fields.fields.map((field) => field.value);
+    if (fields.some(field => !field || field.trim() === '')) {
+      return interaction.reply({
+        content: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
+        ephemeral: true,
+      });
+    }
+
+    const [fullName, nickName, major, studentId, year] = fields;
+
+    if (!/^\d{7}$/.test(studentId)) {
+      return interaction.reply({
+        content: "รหัสนักศึกษาไม่ถูกต้อง กรุณากรอกเป็นตัวเลข 7 หลัก",
+        ephemeral: true,
+      });
+    }
 
     const hiddenStudentId = hideStudentId(studentId);
 
-    const embed = new EmbedBuilder()
-      .setColor("#0099ff")
-      .setTitle(`🎉 ยินดีต้อนรับ ${nickName} เข้าสู่เซิร์ฟเวอร์! 🎉`)
-      .setDescription(`**${interactionUser.user}** ได้ยืนยันตัวตนแล้ว`)
-      .setThumbnail(interactionUser.user.displayAvatarURL())
-      .addFields(
-        { name: "ชื่อเล่น", value: nickName, inline: true },
-        { name: "ชั้นปี", value: year, inline: true },
-        { name: "รหัสนักศึกษา", value: hiddenStudentId, inline: true },
-        { name: "สาขา", value: major, inline: true }
-      )
-      .setTimestamp()
-      .setFooter({ text: "ยินดีที่ได้รู้จัก!" });
+    const createVerifyEmbed = (isFullInfo = false) => {
+      const embed = new EmbedBuilder()
+        .setColor("#0099ff")
+        .setTitle(`🎉 ยินดีต้อนรับ ${nickName} เข้าสู่เซิร์ฟเวอร์! 🎉`)
+        .setDescription(`**${interactionUser.user}** ได้ยืนยันตัวตนแล้ว`)
+        .setThumbnail(interactionUser.user.displayAvatarURL())
+        .setTimestamp()
+        .setFooter({ text: "ยินดีที่ได้รู้จัก!" });
 
-    const Fullembed = new EmbedBuilder()
-      .setColor("#0099ff")
-      .setTitle(`🎉 ยินดีต้อนรับ ${nickName} เข้าสู่เซิร์ฟเวอร์! 🎉`)
-      .setDescription(`**${interactionUser.user}** ได้ยืนยันตัวตนแล้ว`)
-      .setThumbnail(interactionUser.user.displayAvatarURL())
-      .addFields(
-        { name: "ชื่อจริง", value: fullName, inline: true },
-        { name: "ชื่อเล่น", value: nickName, inline: true },
-        { name: "ชั้นปี", value: year, inline: true },
-        { name: "รหัสนักศึกษา", value: studentId, inline: true },
-        { name: "สาขา", value: major, inline: true }
-      )
-      .setTimestamp()
-      .setFooter({ text: "ยินดีที่ได้รู้จัก!" });
+      const fields = isFullInfo 
+        ? [
+            { name: "ชื่อจริง", value: fullName, inline: true },
+            { name: "ชื่อเล่น", value: nickName, inline: true },
+            { name: "ชั้นปี", value: year, inline: true },
+            { name: "รหัสนักศึกษา", value: studentId, inline: true },
+            { name: "สาขา", value: major, inline: true }
+          ]
+        : [
+            { name: "ชื่อเล่น", value: nickName, inline: true },
+            { name: "ชั้นปี", value: year, inline: true },
+            { name: "รหัสนักศึกษา", value: hiddenStudentId, inline: true },
+            { name: "สาขา", value: major, inline: true }
+          ];
+
+      embed.addFields(fields);
+      return embed;
+    };
 
     await interaction.guild.channels.cache
       .get(DISPLAY_CHANNEL_ID)
-      .send({ embeds: [embed] });
+      .send({ embeds: [createVerifyEmbed(false)] });
 
     await interaction.guild.channels.cache
       .get(DISPLAY_FULL_CHANNEL_ID)
-      .send({ embeds: [Fullembed] });
-
+      .send({ embeds: [createVerifyEmbed(true)] });
 
     await interaction.guild.channels.cache
       .get(LOG_CHANNEL_ID)
@@ -82,18 +94,15 @@ const verifyInputModal = async (interaction) => {
   } catch (error) {
     console.error("Error in verifyInputModal:", error);
 
-    let errorMessage = "เกิดข้อผิดพลาดในการยืนยันตัวตน โปรดลองอีกครั้งหรือติดต่อผู้ดูแลระบบ";
-    let ephemeral = true;
+    const errorMessages = {
+      10062: "คำขอนี้ถูกประมวลผลไปแล้ว",
+      50001: "บอทไม่มีสิทธิ์ในการเข้าถึงช่องนี้ กรุณาตรวจสอบสิทธิ์ของบอท",
+      50013: "บอทไม่มีสิทธิ์ในการดำเนินการนี้ กรุณาตรวจสอบสิทธิ์ของบอท",
+      DEFAULT: "เกิดข้อผิดพลาดในการยืนยันตัวตน โปรดลองอีกครั้งหรือติดต่อผู้ดูแลระบบ"
+    };
 
-    if (error.code === 10062) {
-      errorMessage = "คำขอนี้ถูกประมวลผลไปแล้ว";
-    } else if (error.code === 50001) {
-      errorMessage = "บอทไม่มีสิทธิ์ในการเข้าถึงช่องนี้ กรุณาตรวจสอบสิทธิ์ของบอท";
-      ephemeral = false;
-    } else if (error.code === 50013) {
-      errorMessage = "บอทไม่มีสิทธิ์ในการดำเนินการนี้ กรุณาตรวจสอบสิทธิ์ของบอท";
-      ephemeral = false;
-    }
+    const errorMessage = errorMessages[error.code] || errorMessages.DEFAULT;
+    const ephemeral = ![50001, 50013].includes(error.code);
 
     if (interaction.replied || interaction.deferred) {
       try {

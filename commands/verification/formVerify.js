@@ -66,6 +66,14 @@ module.exports = {
    * @returns void
    */
   async execute(interaction) {
+    if (!VERIFY_CHANNEL_ID) {
+      console.error('VERIFY_CHANNEL_ID is not set in environment variables');
+      return interaction.reply({
+        content: "เกิดข้อผิดพลาดในการตั้งค่าระบบ กรุณาติดต่อแอดมิน",
+        ephemeral: true
+      });
+    }
+
     if (interaction.channelId !== VERIFY_CHANNEL_ID) {
       return interaction.reply({
         content: "ไปยืนยันตัวคนที่ห้อง Verify นะครับ",
